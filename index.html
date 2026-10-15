@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1 en 8.000 millones — Versión Expandida</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:#0f0f0f;color:#e5e5e5;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;line-height:1.6}
+  .container{max-width:720px;width:100%;background:#1a1a1a;border-radius:16px;padding:36px 28px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  h1{font-size:1.7rem;font-weight:500;margin-bottom:6px}
+  .subtitle{color:#a3a3a3;font-size:.95rem;margin-bottom:24px}
+  .screen{display:none}.screen.active{display:block}
+  .btn{background:#fff;color:#0f0f0f;border:none;padding:13px 26px;font-size:1rem;font-weight:500;border-radius:8px;cursor:pointer;transition:.2s;margin-top:16px}
+  .btn:hover{background:#e5e5e5;transform:translateY(-1px)}
+  .btn.secondary{background:transparent;color:#a3a3a3;border:1px solid #404040;margin-right:8px;margin-bottom:8px}
+  .life-log{background:#262626;border-radius:12px;padding:18px;margin:20px 0;max-height:360px;overflow-y:auto;font-size:.93rem}
+  .event{margin-bottom:11px;padding-bottom:11px;border-bottom:1px solid #333}
+  .event:last-child{border-bottom:none}
+  .age{color:#a3a3a3;font-size:.82rem}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;font-size:.88rem}
+  .stat{background:#262626;padding:11px;border-radius:8px}
+  .stat span{color:#a3a3a3;display:block;font-size:.78rem}
+  .final{text-align:center}
+  .final h2{font-size:1.45rem;margin-bottom:14px;font-weight:500}
+  .memorial{background:#1f1f1f;border:1px solid #333;border-radius:12px;padding:22px;margin-top:22px;font-style:italic;color:#d4d4d4;font-size:.95rem}
+  .choice-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="start" class="screen active">
+    <h1>1 en 8.000 millones</h1>
+    <p class="subtitle">Naces en un lugar aleatorio del mundo.<br>No eliges. Solo vives.</p>
+    <p style="color:#a3a3a3;margin-bottom:22px;font-size:.93rem">
+      Versión expandida · Muchos países · Emigración · Decisiones · Logros · Muertes variadas
+    </p>
+    <button class="btn" onclick="startLife()">Nacer</button>
+  </div>
+
+  <div id="life" class="screen">
+    <div id="header"></div>
+    <div class="stats" id="stats"></div>
+    <div class="life-log" id="log"></div>
+    <div id="choices"></div>
+  </div>
+
+  <div id="end" class="screen final">
+    <h2 id="end-title"></h2>
+    <div id="end-summary"></div>
+    <div class="memorial" id="memorial"></div>
+    <button class="btn" onclick="location.reload()">Vivir otra vida</button>
+  </div>
+</div>
+
+<script>
+// ===== DATOS =====
+const countries = [
+  {name:"India",w:17.3,le:73,risk:0.32,edu:0.62,region:"surasia"},
+  {name:"China",w:17.0,le:79,risk:0.18,edu:0.82,region:"esteasia"},
+  {name:"Estados Unidos",w:4.1,le:79,risk:0.14,edu:0.90,region:"norteamerica"},
+  {name:"Indonesia",w:3.5,le:72,risk:0.28,edu:0.68,region:"sudesteasia"},
+  {name:"Pakistán",w:2.9,le:68,risk:0.38,edu:0.52,region:"surasia"},
+  {name:"Nigeria",w:2.7,le:55,risk:0.52,edu:0.48,region:"africa"},
+  {name:"Brasil",w:2.6,le:76,risk:0.22,edu:0.76,region:"latino"},
+  {name:"Bangladés",w:2.1,le:74,risk:0.33,edu:0.60,region:"surasia"},
+  {name:"Rusia",w:1.8,le:73,risk:0.25,edu:0.85,region:"europa"},
+  {name:"México",w:1.6,le:76,risk:0.23,edu:0.72,region:"latino"},
+  {name:"Japón",w:1.5,le:85,risk:0.08,edu:0.95,region:"esteasia"},
+  {name:"Etiopía",w:1.5,le:67,risk:0.42,edu:0.45,region:"africa"},
+  {name:"Filipinas",w:1.4,le:71,risk:0.27,edu:0.70,region:"sudesteasia"},
+  {name:"Egipto",w:1.3,le:72,risk:0.26,edu:0.68,region:"mena"},
+  {name:"Vietnam",w:1.2,le:75,risk:0.19,edu:0.80,region:"sudesteasia"},
+  {name:"RD Congo",w:1.3,le:62,risk:0.48,edu:0.42,region:"africa"},
+  {name:"Irán",w:1.1,le:77,risk:0.20,edu:0.84,region:"mena"},
+  {name:"Turquía",w:1.0,le:78,risk:0.18,edu:0.82,region:"mena"},
+  {name:"Alemania",w:1.0,le:81,risk:0.10,edu:0.94,region:"europa"},
+  {name:"Tailandia",w:0.85,le:77,risk:0.16,edu:0.78,region:"sudesteasia"},
+  {name:"Reino Unido",w:0.85,le:81,risk:0.11,edu:0.93,region:"europa"},
+  {name:"Francia",w:0.80,le:83,risk:0.10,edu:0.92,region:"europa"},
+  {name:"Sudáfrica",w:0.75,le:66,risk:0.38,edu:0.70,region:"africa"},
+  {name:"Italia",w:0.70,le:83,risk:0.10,edu:0.90,region:"europa"},
+  {name:"Tanzania",w:0.75,le:67,risk:0.40,edu:0.50,region:"africa"},
+  {name:"Myanmar",w:0.65,le:68,risk:0.35,edu:0.55,region:"sudesteasia"},
+  {name:"Corea del Sur",w:0.65,le:84,risk:0.09,edu:0.95,region:"esteasia"},
+  {name:"Colombia",w:0.65,le:77,risk:0.22,edu:0.75,region:"latino"},
+  {name:"Kenya",w:0.65,le:64,risk:0.40,edu:0.55,region:"africa"},
+  {name:"España",w:0.60,le:84,risk:0.10,edu:0.90,region:"europa"},
+  {name:"Argentina",w:0.55,le:78,risk:0.18,edu:0.85,region:"latino"},
+  {name:"Uganda",w:0.55,le:66,risk:0.42,edu:0.48,region:"africa"},
+  {name:"Argelia",w:0.55,le:77,risk:0.20,edu:0.75,region:"mena"},
+  {name:"Sudán",w:0.55,le:66,risk:0.45,edu:0.45,region:"africa"},
+  {name:"Ucrania",w:0.50,le:73,risk:0.28,edu:0.88,region:"europa"},
+  {name:"Irak",w:0.55,le:72,risk:0.35,edu:0.60,region:"mena"},
+  {name:"Canadá",w:0.50,le:83,risk:0.09,edu:0.94,region:"norteamerica"},
+  {name:"Polonia",w:0.45,le:78,risk:0.15,edu:0.90,region:"europa"},
+  {name:"Marruecos",w:0.45,le:75,risk:0.22,edu:0.65,region:"mena"},
+  {name:"Arabia Saudita",w:0.45,le:78,risk:0.15,edu:0.80,region:"mena"},
+  {name:"Uzbekistán",w:0.45,le:73,risk:0.22,edu:0.80,region:"asia"},
+  {name:"Malasia",w:0.40,le:76,risk:0.16,edu:0.82,region:"sudesteasia"},
+  {name:"Perú",w:0.40,le:77,risk:0.20,edu:0.75,region:"latino"},
+  {name:"Angola",w:0.40,le:64,risk:0.45,edu:0.45,region:"africa"},
+  {name:"Mozambique",w:0.40,le:63,risk:0.46,edu:0.42,region:"africa"},
+  {name:"Ghana",w:0.40,le:66,risk:0.38,edu:0.55,region:"africa"},
+  {name:"Nepal",w:0.35,le:71,risk:0.30,edu:0.60,region:"surasia"},
+  {name:"Venezuela",w:0.35,le:73,risk:0.30,edu:0.75,region:"latino"},
+  {name:"Camerún",w:0.35,le:63,risk:0.42,edu:0.50,region:"africa"},
+  {name:"Australia",w:0.35,le:84,risk:0.09,edu:0.94,region:"oceania"},
+  {name:"Costa de Marfil",w:0.35,le:62,risk:0.44,edu:0.48,region:"africa"},
+  {name:"Níger",w:0.30,le:63,risk:0.48,edu:0.35,region:"africa"},
+  {name:"Sri Lanka",w:0.30,le:77,risk:0.18,edu:0.85,region:"surasia"},
+  {name:"Burkina Faso",w:0.30,le:63,risk:0.45,edu:0.40,region:"africa"},
+  {name:"Malí",w:0.30,le:62,risk:0.46,edu:0.38,region:"africa"},
+  {name:"Rumania",w:0.25,le:76,risk:0.18,edu:0.85,region:"europa"},
+  {name:"Chile",w:0.25,le:81,risk:0.12,edu:0.88,region:"latino"},
+  {name:"Kazajistán",w:0.25,le:74,risk:0.22,edu:0.85,region:"asia"},
+  {name:"Guatemala",w:0.25,le:73,risk:0.28,edu:0.60,region:"latino"},
+  {name:"Ecuador",w:0.25,le:77,risk:0.20,edu:0.75,region:"latino"},
+  {name:"Países Bajos",w:0.25,le:82,risk:0.09,edu:0.93,region:"europa"},
+  {name:"Camboya",w:0.22,le:71,risk:0.28,edu:0.55,region:"sudesteasia"},
+  {name:"Zimbabwe",w:0.22,le:63,risk:0.42,edu:0.60,region:"africa"},
+  {name:"Guinea",w:0.20,le:61,risk:0.47,edu:0.40,region:"africa"},
+  {name:"Ruanda",w:0.20,le:68,risk:0.35,edu:0.55,region:"africa"},
+  {name:"Benín",w:0.18,le:63,risk:0.43,edu:0.45,region:"africa"},
+  {name:"Burundi",w:0.18,le:64,risk:0.44,edu:0.42,region:"africa"},
+  {name:"Túnez",w:0.18,le:77,risk:0.16,edu:0.80,region:"mena"},
+  {name:"Bolivia",w:0.18,le:72,risk:0.28,edu:0.70,region:"latino"},
+  {name:"Bélgica",w:0.17,le:82,risk:0.10,edu:0.92,region:"europa"},
+  {name:"República Checa",w:0.15,le:80,risk:0.12,edu:0.92,region:"europa"},
+  {name:"Grecia",w:0.15,le:81,risk:0.12,edu:0.90,region:"europa"},
+  {name:"Portugal",w:0.15,le:82,risk:0.11,edu:0.90,region:"europa"},
+  {name:"Hungría",w:0.14,le:77,risk:0.18,edu:0.88,region:"europa"},
+  {name:"Suecia",w:0.14,le:83,risk:0.08,edu:0.94,region:"europa"},
+  {name:"Azerbaiyán",w:0.14,le:74,risk:0.22,edu:0.82,region:"asia"},
+  {name:"Tayikistán",w:0.13,le:72,risk:0.25,edu:0.80,region:"asia"},
+  {name:"Austria",w:0.13,le:82,risk:0.09,edu:0.93,region:"europa"},
+  {name:"Israel",w:0.13,le:83,risk:0.09,edu:0.94,region:"mena"},
+  {name:"Suiza",w:0.12,le:84,risk:0.07,edu:0.95,region:"europa"},
+  {name:"Hong Kong",w:0.10,le:86,risk:0.06,edu:0.96,region:"esteasia"},
+  {name:"Singapur",w:0.08,le:84,risk:0.07,edu:0.96,region:"sudesteasia"},
+  {name:"Dinamarca",w:0.08,le:82,risk:0.08,edu:0.94,region:"europa"},
+  {name:"Finlandia",w:0.08,le:82,risk:0.08,edu:0.95,region:"europa"},
+  {name:"Noruega",w:0.08,le:83,risk:0.07,edu:0.95,region:"europa"},
+  {name:"Irlanda",w:0.07,le:83,risk:0.09,edu:0.93,region:"europa"},
+  {name:"Nueva Zelanda",w:0.07,le:83,risk:0.09,edu:0.94,region:"oceania"},
+  {name:"Croacia",w:0.05,le:79,risk:0.14,edu:0.88,region:"europa"},
+  {name:"Georgia",w:0.05,le:74,risk:0.22,edu:0.85,region:"asia"},
+  {name:"Uruguay",w:0.05,le:78,risk:0.15,edu:0.88,region:"latino"},
+  {name:"Panamá",w:0.05,le:79,risk:0.15,edu:0.82,region:"latino"},
+  {name:"Costa Rica",w:0.05,le:80,risk:0.12,edu:0.85,region:"latino"},
+  {name:"Lituania",w:0.04,le:76,risk:0.18,edu:0.90,region:"europa"},
+  {name:"Armenia",w:0.04,le:76,risk:0.20,edu:0.88,region:"asia"},
+  {name:"Albania",w:0.04,le:79,risk:0.15,edu:0.85,region:"europa"},
+  {name:"Mongolia",w:0.04,le:72,risk:0.25,edu:0.80,region:"asia"},
+  {name:"Jamaica",w:0.04,le:75,risk:0.22,edu:0.78,region:"caribe"},
+  {name:"Qatar",w:0.03,le:82,risk:0.08,edu:0.90,region:"mena"},
+  {name:"Eslovenia",w:0.03,le:82,risk:0.09,edu:0.93,region:"europa"}
+];
+
+const namePools = {
+  surasia: {m:["Aarav","Vivaan","Aditya","Vihaan","Arjun","Sai","Reyansh","Ayaan","Krishna","Ishaan","Shaurya","Atharv","Kabir","Rudra","Aryan","Dhruv","Kabir","Rohan","Yash","Kunal"],
+            f:["Saanvi","Aanya","Aadhya","Pari","Ananya","Diya","Myra","Anika","Aaradhya","Sara","Isha","Kiara","Riya","Anvi","Prisha","Navya","Khushi","Anaya","Amaira","Myra"]},
+  esteasia: {m:["Wei","Hao","Jun","Ming","Chen","Yong","Lei","Tao","Jian","Xin","Hiroshi","Kenji","Takeshi","Yuki","Haruto","Sora","Ren","Riku","Haruki","Yuto"],
+             f:["Li","Xia","Fang","Jing","Yan","Mei","Ying","Hui","Xiu","Yun","Yui","Hana","Aoi","Sakura","Yuna","Mio","Rina","Akari","Himari","Koharu"]},
+  latino: {m:["Santiago","Mateo","Sebastián","Mateo","Nicolás","Samuel","Benjamín","Joaquín","Lucas","Diego","Daniel","Martín","Emiliano","Alejandro","Tomás","Felipe","Bruno","Thiago","Gael","Maximiliano"],
+           f:["Sofía","Valentina","Isabella","Camila","Valeria","Mariana","Gabriela","Sara","Martina","Lucía","Emma","Catalina","Antonella","Mia","Renata","Amanda","Paula","Julieta","Florencia","Agustina"]},
+  africa: {m:["Chinedu","Emeka","Ibrahim","Kwame","Abdul","Musa","Oluwaseun","Tunde","Kofi","Jabari","Amari","Malik","Zuberi","Sefu","Jelani","Bakari","Omari","Tariq","Idris","Khalil"],
+           f:["Aisha","Fatima","Aminata","Ngozi","Chioma","Amina","Zainab","Adanna","Ifeoma","Makena","Nia","Zuri","Amani","Imani","Sanaa","Farida","Halima","Mariam","Yasmin","Safiya"]},
+  mena: {m:["Mohammed","Ahmed","Ali","Omar","Youssef","Hassan","Ibrahim","Khaled","Tariq","Karim","Samir","Nabil","Rami","Fadi","Ziad","Walid","Bassam","Mahmoud","Sami","Adel"],
+         f:["Fatima","Aisha","Maryam","Sara","Layla","Nour","Yasmin","Hana","Amira","Lina","Rania","Salma","Dina","Maya","Leila","Farah","Nada","Rana","Hiba","Zeinab"]},
+  europa: {m:["Liam","Noah","Oliver","William","James","Benjamin","Lucas","Henry","Alexander","Mason","Michael","Daniel","Jacob","Logan","Jackson","Sebastian","Jack","Aiden","Owen","Samuel"],
+           f:["Olivia","Emma","Charlotte","Amelia","Sophia","Isabella","Mia","Evelyn","Harper","Luna","Camila","Gianna","Elizabeth","Eleanor","Ella","Abigail","Sofia","Avery","Scarlett","Emily"]},
+  norteamerica: {m:["Liam","Noah","Oliver","James","William","Benjamin","Lucas","Henry","Theodore","Jack","Levi","Alexander","Julian","Mateo","David","Asher","John","Wyatt","Matthew","Luke"],
+                 f:["Olivia","Emma","Charlotte","Amelia","Sophia","Isabella","Mia","Evelyn","Harper","Luna","Camila","Gianna","Elizabeth","Eleanor","Ella","Abigail","Avery","Scarlett","Emily","Aria"]},
+  sudesteasia: {m:["Nguyen","Tran","Le","Pham","Hoang","Huynh","Vo","Dang","Bui","Do","Arif","Budi","Agus","Joko","Eko","Rizki","Andi","Hendra","Dewa","Putra"],
+                f:["Linh","Anh","Hương","Lan","Mai","Thảo","Ngọc","Trang","Hà","Yến","Siti","Nur","Ayu","Putri","Dewi","Rina","Indah","Wulan","Fitri","Lestari"]},
+  asia: {m:["Alisher","Bobur","Jasur","Sardor","Timur","Rustam","Aziz","Farrukh","Shoxrux","Bekzod","Nurbek","Islom","Jahongir","Oybek","Ulugbek","Anvar","Dilshod","Sherzod","Komil","Bahodir"],
+         f:["Madina","Dilnoza","Nigora","Gulnora","Sevara","Zarina","Malika","Nodira","Feruza","Shahnoza","Gulchehra","Munisa","Lola","Dildora","Aziza","Mohira","Nilufar","Sabina","Yulduz","Gulbahor"]},
+  oceania: {m:["Oliver","Jack","William","Noah","James","Thomas","Lucas","Henry","Ethan","Alexander","Samuel","Benjamin","Masina","Tama","Wiremu","Rawiri","Hemi","Manaia","Kauri","Nikau"],
+            f:["Charlotte","Olivia","Amelia","Isla","Mia","Ava","Grace","Willow","Harper","Ella","Chloe","Emily","Aroha","Maia","Anahera","Atarangi","Hine","Mere","Tui","Moana"]},
+  caribe: {m:["Jayden","Aiden","Noah","Liam","Ethan","Malik","Omari","Javon","Dwayne","Andre","Ricardo","Carlos","Miguel","Luis","José","Anthony","Christopher","Daniel","Joshua","Matthew"],
+           f:["Aaliyah","Imani","Nia","Zuri","Amara","Keisha","Shanice","Tiana","Jada","Maya","Sofia","Isabella","Camila","Valentina","Lucia","Gabriela","Daniela","Mariana","Andrea","Nicole"]}
+};
+
+const jobs = ["agricultura","comercio informal","fábrica","construcción","servicios","transporte","educación","salud","oficina","tecnología","hostelería","seguridad","pesca","minería","artesanía","venta ambulante","trabajo doméstico","funcionario","empresario informal","desempleado"];
+
+const deathCauses = [
+  "enfermedades del corazón","cáncer","infección respiratoria","accidente de tráfico","complicaciones de la diabetes",
+  "accidente laboral","violencia","complicaciones del parto","malaria","tuberculosis","VIH/sida","derrame cerebral",
+  "enfermedades del hígado","insuficiencia renal","neumonía","suicidio","sobredosis","desnutrición","herida de guerra",
+  "infección gastrointestinal","complicaciones de la vejez","paro cardíaco","embolia","cáncer de pulmón","cáncer de estómago"
+];
+
+const achievementsList = [
+  "Logró que sus hijos terminaran la secundaria",
+  "Compró una casa propia",
+  "Emigró y construyó una nueva vida",
+  "Superó una enfermedad grave",
+  "Mantuvo un matrimonio largo",
+  "Aprendió a leer siendo adulto",
+  "Abrió un pequeño negocio",
+  "Viajó a otro continente",
+  "Ayudó a educar a sus hermanos menores",
+  "Sobrevivió a un conflicto armado",
+  "Se convirtió en el primer universitario de su familia",
+  "Vivió más de 80 años",
+  "Tuvo más de 5 nietos",
+  "Cambió de país y se adaptó",
+  "Encontró la paz después de grandes pérdidas"
+];
+
+let state = {};
+
+function weightedCountry() {
+  const total = countries.reduce((s,c)=>s+c.w,0);
+  let r = Math.random()*total;
+  for(const c of countries){ if(r < c.w) return c; r-=c.w; }
+  return countries[0];
+}
+
+function getName(gender, region) {
+  const pool = namePools[region] || namePools.europa;
+  const list = gender==="m" ? pool.m : pool.f;
+  return list[Math.floor(Math.random()*list.length)];
+}
+
+function startLife() {
+  const c = weightedCountry();
+  const gender = Math.random()>0.5 ? "m" : "f";
+  const name = getName(gender, c.region);
+
+  state = {
+    name, gender: gender==="m"?"hombre":"mujer",
+    country: c.name, region: c.region,
+    le: c.le, risk: c.risk, edu: c.edu,
+    age:0, alive:true,
+    education:"ninguna", job:"ninguno",
+    married:false, children:0, divorced:false,
+    emigrated:false, originalCountry: c.name,
+    achievements:[], events:[],
+    health:100
+  };
+
+  document.getElementById("start").classList.remove("active");
+  document.getElementById("life").classList.add("active");
+  addEvent(0, `Naciste en ${state.country} como ${state.gender}. Te llamaron ${state.name}.`);
+  updateUI();
+  setTimeout(runYear, 700);
+}
+
+function addEvent(age, text) {
+  state.events.push({age,text});
+  const log = document.getElementById("log");
+  log.innerHTML += `<div class="event"><span class="age">${age} años</span><br>${text}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateUI() {
+  document.getElementById("header").innerHTML = `<h1>${state.name}</h1><p class="subtitle">${state.country} · ${state.age} años</p>`;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><span>Educación</span>${state.education}</div>
+    <div class="stat"><span>Trabajo</span>${state.job}</div>
+    <div class="stat"><span>Estado civil</span>${state.married?"Casado/a":(state.divorced?"Divorciado/a":"Soltero/a")}</div>
+    <div class="stat"><span>Hijos</span>${state.children}</div>
+  `;
+}
+
+function runYear() {
+  if(!state.alive) return;
+  state.age++;
+
+  // Muerte
+  const deathChance = Math.pow(state.age / state.le, 2.8)*0.12 + state.risk*0.012;
+  if(Math.random() < deathChance || state.age > state.le + 18){
+    die(); return;
+  }
+
+  // ===== EVENTOS POR ETAPA =====
+  if(state.age===5 || state.age===6){
+    if(Math.random() < state.edu){
+      state.education="primaria";
+      addEvent(state.age,"Empezaste la escuela primaria.");
+    } else {
+      addEvent(state.age,"No pudiste ir a la escuela regularmente. Ayudabas en casa o trabajando.");
+    }
+  }
+
+  if(state.age===12 && state.education==="primaria" && Math.random()<state.edu*0.75){
+    state.education="secundaria";
+    addEvent(12,"Pasaste a la secundaria.");
+  }
+
+  if(state.age===15 && Math.random()<0.25){
+    showChoice("Tienes la oportunidad de dejar los estudios para trabajar y ayudar a tu familia.",[
+      {text:"Seguir estudiando", action:()=>addEvent(15,"Decidiste continuar estudiando a pesar de las dificultades económicas.")},
+      {text:"Dejar la escuela", action:()=>{state.education=state.education==="secundaria"?"primaria":"ninguna"; state.job="trabajo familiar"; addEvent(15,"Dejaste la escuela para trabajar y apoyar a tu familia.");}}
+    ]);
+    return;
+  }
+
+  if(state.age===18){
+    if(state.education==="secundaria" && Math.random()<state.edu*0.55){
+      state.education="universidad";
+      addEvent(18,"Entraste a la universidad. Fue un gran logro para tu familia.");
+      state.achievements.push("Fue a la universidad");
+    } else {
+      state.job = jobs[Math.floor(Math.random()*jobs.length)];
+      addEvent(18,`Empezaste a trabajar como ${state.job}.`);
+    }
+  }
+
+  // Matrimonio
+  if(state.age>=20 && state.age<=32 && !state.married && !state.divorced && Math.random()<0.18){
+    state.married=true;
+    addEvent(state.age,"Te casaste.");
+  }
+
+  // Divorcio
+  if(state.married && state.age>28 && Math.random()<0.04){
+    state.married=false; state.divorced=true;
+    addEvent(state.age,"Tu matrimonio terminó en divorcio.");
+  }
+
+  // Hijos
+  if(state.married && state.age>=20 && state.age<=40 && state.children<5 && Math.random()<0.22){
+    state.children++;
+    const n = state.children===1?"primer":state.children===2?"segundo":state.children===3?"tercer":"siguiente";
+    addEvent(state.age,`Nació tu ${n} hijo/a.`);
+  }
+
+  // Cambio de trabajo
+  if(state.age>22 && state.age%7===0 && Math.random()<0.35){
+    const old = state.job;
+    state.job = jobs[Math.floor(Math.random()*jobs.length)];
+    if(state.job!==old) addEvent(state.age,`Cambiaste de trabajo. Ahora te dedicas a ${state.job}.`);
+  }
+
+  // Emigración
+  if(state.age>=22 && state.age<=45 && !state.emigrated && Math.random()<0.07){
+    showChoice("Surge una oportunidad de emigrar a otro país en busca de mejores condiciones.",[
+      {text:"Emigrar", action:()=>{
+        const dest = countries[Math.floor(Math.random()*Math.min(25,countries.length))];
+        state.country = dest.name;
+        state.emigrated = true;
+        state.region = dest.region;
+        state.le = Math.round((state.le + dest.le)/2);
+        addEvent(state.age,`Emigraste a ${dest.name}. Empezaste una nueva etapa lejos de tu tierra natal.`);
+        state.achievements.push("Emigró a otro país");
+      }},
+      {text:"Quedarte", action:()=>addEvent(state.age,"Decidiste quedarte en tu país a pesar de las dificultades.")}
+    ]);
+    return;
+  }
+
+  // Eventos aleatorios variados
+  if(Math.random()<0.11){
+    const evs = [
+      "Sufriste una enfermedad grave pero lograste recuperarte.",
+      "Perdiste a un ser querido muy cercano.",
+      "Conseguiste un aumento o mejor puesto en el trabajo.",
+      "Pasaste por una fuerte crisis económica familiar.",
+      "Conociste a alguien que cambió tu perspectiva de la vida.",
+      "Tuviste un accidente que te dejó secuelas temporales.",
+      "Participaste en una protesta o movimiento social.",
+      "Un familiar cercano emigró y te envió ayuda.",
+      "Lograste comprar o construir algo propio (casa, terreno, negocio).",
+      "Viviste un desastre natural que afectó tu zona.",
+      "Recibiste una herencia pequeña pero significativa.",
+      "Tuviste problemas con la autoridad o la policía.",
+      "Encontraste un nuevo círculo de amigos que te apoyó mucho.",
+      "Aprendiste una nueva habilidad que mejoró tus ingresos.",
+      "Pasaste una temporada de soledad profunda.",
+      "Celebraste un logro importante de uno de tus hijos.",
+      "Te involucraste en tu comunidad o religión de forma activa.",
+      "Sufriste discriminación o rechazo por tu origen o situación.",
+      "Viajaste por primera vez fuera de tu región.",
+      "Superaste una adicción o un mal hábito."
+    ];
+    addEvent(state.age, evs[Math.floor(Math.random()*evs.length)]);
+  }
+
+  // Logros
+  if(state.age===50 && state.children>=2 && Math.random()<0.4){
+    state.achievements.push("Criaste a varios hijos hasta la adultez");
+  }
+  if(state.age===60 && state.married){
+    state.achievements.push("Llevaste un matrimonio de muchas décadas");
+  }
+
+  updateUI();
+  setTimeout(runYear, 480 + Math.random()*350);
+}
+
+function showChoice(q, opts){
+  const div = document.getElementById("choices");
+  div.innerHTML = `<p style="margin-bottom:10px">${q}</p><div class="choice-btns"></div>`;
+  const btns = div.querySelector(".choice-btns");
+  opts.forEach(o=>{
+    const b = document.createElement("button");
+    b.className="btn secondary";
+    b.textContent=o.text;
+    b.onclick=()=>{ o.action(); div.innerHTML=""; updateUI(); setTimeout(runYear,700); };
+    btns.appendChild(b);
+  });
+}
+
+function die(){
+  state.alive=false;
+  const cause = deathCauses[Math.floor(Math.random()*deathCauses.length)];
+  addEvent(state.age, `Moriste a los ${state.age} años por ${cause}.`);
+
+  // Logros finales
+  if(state.age>=80) state.achievements.push("Vivió una vida muy larga");
+  if(state.emigrated) state.achievements.push("Construyó una vida en un país extranjero");
+  if(state.education==="universidad") state.achievements.push("Fue universitario/a");
+  if(state.children>=3) state.achievements.push("Tuvo una familia numerosa");
+
+  setTimeout(()=>{
+    document.getElementById("life").classList.remove("active");
+    document.getElementById("end").classList.add("active");
+
+    document.getElementById("end-title").textContent = `${state.name} (0 – ${state.age})`;
+
+    let logros = state.achievements.length ? state.achievements.map(a=>`• ${a}`).join("<br>") : "• Una vida sencilla y silenciosa";
+
+    document.getElementById("end-summary").innerHTML = `
+      <p>Nació en <strong>${state.originalCountry}</strong>${state.emigrated?` y emigró a <strong>${state.country}</strong>`:""}.</p>
+      <p style="margin-top:10px">Vivió ${state.age} años.<br>
+      Educación: ${state.education}<br>
+      Último trabajo: ${state.job}<br>
+      ${state.married?"Estuvo casado/a":state.divorced?"Se divorció":"Permaneció soltero/a"}
+      ${state.children>0?` · ${state.children} hijo${state.children>1?"s":""}`:""}.</p>
+      <p style="margin-top:14px"><strong>Logros destacados:</strong><br>${logros}</p>
+    `;
+
+    document.getElementById("memorial").innerHTML = `
+      Esta vida solo existió aquí, en esta simulación.<br>
+      En el mundo real, millones de personas viven historias parecidas cada día, sin que nadie las recuerde.<br><br>
+      Tú naciste donde naciste. Ellos tampoco eligieron.
+    `;
+  },1600);
+}
+</script>
+</body>
+</html>
